@@ -1,0 +1,36 @@
+---
+- name: Install developer hub operator
+  kubernetes.core.k8s:
+    state: present
+    src: "rhdh-operator.yml"
+
+- name: Wait till the Object is created
+  kubernetes.core.k8s_info:
+    kind: Subscription
+    api_version: operators.coreos.com/v1alpha1
+    wait: true
+    name: rhdh
+    namespace: rhdh-operator
+    wait_sleep: 10
+    wait_timeout: 360
+
+- name: Install developer hub instance
+  kubernetes.core.k8s:
+    state: present
+    src: "rhdh-instance.yml"
+  retries: 30
+  delay: 10
+
+- name: Get developer hub route
+  kubernetes.core.k8s_info:
+    api_version: v1
+    kind: Route
+    namespace: "rhdh-gitlab"
+    label_selectors:
+      - "app.kubernetes.io/instance=developer-hub"
+  register: route_info
+
+- name: Print developer hub URL
+  ansible.builtin.debug:
+    msg: "Developer Hub URL: https://{{ route_info.resources[0].spec.host }}"
+  when: route_info.resources | length > 0

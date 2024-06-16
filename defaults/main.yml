@@ -1,0 +1,37 @@
+---
+gitlab_namespace: "gitlab-system"
+rhdh_namespace: "rhdh-gitlab"
+gitlab_users:
+  - name: user1
+    username: user1
+    password: "@abc1cde2"
+    email: user1@redhat.com
+    group: team-a
+    access: developer
+  - name: user2
+    username: user2
+    password: "@abc1cde2"
+    email: user2@redhat.com
+    group: team-b
+    access: developer
+  - name: maarten
+    username: maarten
+    password: "@abc1cde2"
+    email: user4@redhat.com
+    group: team-a
+    access: developer
+    isadmin: true
+  - name: bart
+    username: bart
+    password: "@abc1cde2"
+    email: user3@redhat.com
+    group: team-a
+    access: developer
+    isadmin: true
+gitlab_client_id: ""
+gitlab_client_secret: ""
+gitlab_token: "KbfdXFhoX407c0v5ZP2Y"
+enable_gitlab_plugin: true
+enable_gitlab_autodiscovery: true
+gitlab_output_file: /tmp/gitlab.yml
+gitlab_secrets_output_file: /tmp/gitlab_secrets.yml

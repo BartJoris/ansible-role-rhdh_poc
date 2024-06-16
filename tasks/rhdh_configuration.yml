@@ -1,0 +1,127 @@
+---
+- name: Apply mandatory backend secret
+  kubernetes.core.k8s:
+    state: present
+    namespace: "{{ rhdh_namespace }}"
+    src: "rhdh-secrets.yml"
+  register: apply_secret_result
+
+- name: Get base domain from ingresscontroller
+  kubernetes.core.k8s_info:
+    kind: IngressController
+    namespace: openshift-ingress-operator
+    name: default
+  register: ingress_info
+
+- name: Set fact for base domain
+  ansible.builtin.set_fact:
+    basedomain: "{{ ingress_info.resources[0].status.domain }}"
+
+- name: Encode base domain in base64
+  ansible.builtin.set_fact:
+    basedomain_base64: "{{ basedomain | b64encode }}"
+
+- name: Patch secret with base domain
+  kubernetes.core.k8s:
+    state: patched
+    namespace: "{{ rhdh_namespace }}"
+    kind: Secret
+    name: rhdh-secrets
+    merge_type: strategic-merge
+    definition:
+      data:
+        basedomain: "{{ basedomain_base64 }}"
+  when: apply_secret_result is succeeded
+
+- name: Apply custom app config map
+  kubernetes.core.k8s:
+    state: present
+    namespace: "{{ rhdh_namespace }}"
+    src: "rhdh-app-configmap.yml"
+
+- name: Apply RH Developer Hub instance configuration
+  kubernetes.core.k8s:
+    state: present
+    namespace: "{{ rhdh_namespace }}"
+    src: "rhdh-instance.yml"
+
+- name: Create GitLab secret definition
+  ansible.builtin.template:
+    src: "gitlab_secrets.j2"
+    dest: "{{ gitlab_secrets_output_file }}"
+
+- name: Apply GitLab secret
+  kubernetes.core.k8s:
+    state: present
+    namespace: "{{ rhdh_namespace }}"
+    src: "{{ gitlab_secrets_output_file }}"
+
+- name: Apply GitLab auth configuration
+  kubernetes.core.k8s:
+    state: present
+    namespace: "{{ rhdh_namespace }}"
+    src: "rhdh-app-configmap-1.yml"
+  tags: rhdh_configuration
+
+- name: Apply updated RH Developer Hub instance configuration
+  kubernetes.core.k8s:
+    state: present
+    namespace: "{{ rhdh_namespace }}"
+    src: "rhdh-instance-1.yml"
+  tags: rhdh_configuration
+
+# Enable gitlab plugin integration
+- name: Apply GitLab auth configuration with Gitlab plugin integration
+  kubernetes.core.k8s:
+    state: present
+    namespace: "{{ rhdh_namespace }}"
+    src: "rhdh-app-configmap-2.yml"
+  when: enable_gitlab_plugin
+  tags: rhdh_configuration
+
+- name: Apply updated RH Developer Hub instance configuration
+  kubernetes.core.k8s:
+    state: present
+    namespace: "{{ rhdh_namespace }}"
+    src: "rhdh-instance-1.yml"
+  when: enable_gitlab_plugin
+  tags: rhdh_configuration
+
+# Add gitlab autodiscovery
+- name: Create configmap with dymamic plugin
+  kubernetes.core.k8s:
+    state: present
+    namespace: "{{ rhdh_namespace }}"
+    src: "dynamic-plugins-3.yml"
+  when: enable_gitlab_autodiscovery
+  tags: rhdh_configuration
+
+- name: Apply GitLab auto discovery on Developer Hub
+  kubernetes.core.k8s:
+    state: present
+    namespace: "{{ rhdh_namespace }}"
+    src: "rhdh-app-configmap-3.yml"
+  when: enable_gitlab_autodiscovery
+  tags: rhdh_configuration
+
+- name: Apply updated RH Developer Hub instance configuration
+  kubernetes.core.k8s:
+    state: present
+    namespace: "{{ rhdh_namespace }}"
+    src: "rhdh-instance-3.yml"
+  when: enable_gitlab_autodiscovery
+  tags: rhdh_configuration
+
+- name: Apply final app config map for GitLab integration
+  kubernetes.core.k8s:
+    state: present
+    namespace: "{{ rhdh_namespace }}"
+    src: "rhdh-app-configmap-1.yml"
+
+- name: Print Developer Hub URL
+  ansible.builtin.debug:
+    msg: "Developer Hub portal: https://backstage-developer-hub-rhdh-gitlab.{{ basedomain }}"
+
+- name: Print GitLab URL
+  ansible.builtin.debug:
+    msg: "GitLab portal: https://gitlab.{{ basedomain }}"

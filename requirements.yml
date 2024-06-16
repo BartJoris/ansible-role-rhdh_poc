@@ -1,0 +1,7 @@
+---
+collections:
+ - name: community.kubernetes
+roles: 
+ - name: rhdh_poc
+   src: https://github.com/BartJoris/ansible-role-rhdh_poc
+   version: origin/main

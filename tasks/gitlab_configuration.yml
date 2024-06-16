@@ -1,0 +1,91 @@
+---
+- name: Get GitLab Ingress
+  kubernetes.core.k8s_info:
+    api_version: networking.k8s.io/v1
+    kind: Ingress
+    namespace: "{{ gitlab_namespace }}"
+    label_selectors:
+      - app=webservice
+  register: ingress_info
+  tags: gitlab_configuration
+
+- name: Set GitLab API URL fact
+  ansible.builtin.set_fact:
+    api_url: "https://{{ ingress_info.resources[0].spec.rules[0].host }}/"
+  tags: gitlab_configuration
+
+- name: Get GitLab initial root password secret
+  kubernetes.core.k8s:
+    state: present
+    definition:
+      kind: Secret
+      apiVersion: v1
+      metadata:
+        name: gitlab-gitlab-initial-root-password
+        namespace: gitlab-system
+  register: gitlab_secret
+  tags: gitlab_configuration
+
+- name: Decode GitLab initial root password
+  ansible.builtin.set_fact:
+    api_password: "{{ gitlab_secret.result.data.password | b64decode }}"
+    api_username: root
+  tags: gitlab_configuration
+
+- name: Print GitLab initial root password
+  ansible.builtin.debug:
+    msg: "GitLab initial root password is: {{ api_password }}"
+  tags: gitlab_configuration
+
+- name: Create GitLab groups
+  community.general.gitlab_group:
+    name: "{{ item }}"
+    state: present
+    visibility: public
+    api_url: "{{ api_url }}"
+    api_username: "{{ api_username }}"
+    api_password: "{{ api_password }}"
+  loop: "{{ gitlab_users | map(attribute='group') | unique }}"
+  tags: gitlab_configuration
+
+- name: Create GitLab users
+  community.general.gitlab_user:
+    name: "{{ item.name }}"
+    username: "{{ item.username }}"
+    password: "{{ item.password }}"
+    email: "{{ item.email }}"
+    group: "{{ item.group }}"
+    state: present
+    sshkey_file: "{{ item.sshkey_file | default(omit)}}"
+    isadmin: "{{ item.isadmin | default(omit)}}"
+    confirm: false
+    api_url: "{{ api_url }}"
+    api_username: "{{ api_username }}"
+    api_password: "{{ api_password }}"
+  loop: "{{ gitlab_users }}"
+  tags: gitlab_configuration
+
+- name: Add a user to a GitLab Group
+  community.general.gitlab_group_members:
+    api_url: "{{ api_url }}"
+    api_username: "{{ api_username }}"
+    api_password: "{{ api_password }}"
+    gitlab_group: "{{ item.group }}"
+    gitlab_user: "{{ item.username }}"
+    access_level: "{{ item.access }}"
+    state: present
+  loop: "{{ gitlab_users }}"
+  tags: gitlab_configuration
+
+- name: Create GitLab repository
+  community.general.gitlab_project:
+    api_url: "{{ api_url }}"
+    api_username: "{{ api_username }}"
+    api_password: "{{ api_password }}"
+    name: sample-app
+    group: team-a
+    visibility: public
+    state: present
+    default_branch: main
+    initialize_with_readme: true
+  tags: gitlab_configuration

@@ -1,0 +1,4 @@
+openshift
+pyYAML
+kubernetes
+python-gitlab==1.15.0
