@@ -1,6 +1,6 @@
 ---
 - name: Install cert-manager operator
-  kubernetes.core.k8s:
+  redhat.openshift.k8s:
     state: present
     src: "cert-manager-operator.yml"
 
