@@ -1,4 +1,12 @@
 ---
+- name: install pre-requisites
+  pip:
+    name:
+      - openshift
+      - pyyaml
+      - kubernetes
+      - python-gitlab==1.15.0
+
 - name: Install certmanager
   ansible.builtin.include_tasks:
     file: certmanager_install.yml
