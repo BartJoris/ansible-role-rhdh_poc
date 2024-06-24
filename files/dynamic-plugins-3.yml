@@ -10,3 +10,9 @@ data:
       - package: './dynamic-plugins/dist/backstage-plugin-catalog-backend-module-gitlab-dynamic'
         disabled: false
         pluginConfig: {}
+      - package: ./dynamic-plugins/dist/janus-idp-backstage-plugin-keycloak-backend-dynamic
+        disabled: false
+        pluginConfig: {}
+      - package: ./dynamic-plugins/dist/janus-idp-backstage-plugin-3scale-backend-dynamic
+        disabled: false
+        pluginConfig: {}

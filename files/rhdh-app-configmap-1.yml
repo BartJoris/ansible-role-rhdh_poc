@@ -4,7 +4,7 @@ metadata:
   name: app-config-rhdh
 data:
   app-config-rhdh.yaml: |
-    signInPage: gitlab   
+    signInPage: oidc   
     app:
       title: Red Hat Developer Hub
       baseUrl: https://backstage-developer-hub-rhdh-gitlab.${basedomain}
@@ -15,12 +15,50 @@ data:
       baseUrl: https://backstage-developer-hub-rhdh-gitlab.${basedomain}
       cors:
         origin: https://backstage-developer-hub-rhdh-gitlab.${basedomain} 
+    catalog:
+      providers:
+        threeScaleApiEntity:
+          development:
+            baseUrl: https://demo-organization-admin.apps.cluster-7mgg4.dynamic.redhatworkshops.io/
+            accessToken: 263aa1b2d3ebe5592ffb269bebd4bb4c
+            schedule: # optional; same options as in TaskScheduleDefinition
+              # supports cron, ISO duration, "human duration" as used in code
+              frequency: { minutes: 1 }
+              # supports ISO duration, "human duration" as used in code
+              timeout: { minutes: 3 }
     auth:
       environment: development
+      session:
+        secret: ${BACKEND_SECRET}
       providers:
         gitlab:
           development:
             clientId: ${AUTH_GITLAB_CLIENT_ID}
             clientSecret: ${AUTH_GITLAB_CLIENT_SECRET}
             audience: https://gitlab.${basedomain}
-            callbackUrl: https://backstage-developer-hub-rhdh-gitlab.${basedomain}/api/auth/gitlab/handler/frame
+            callbackUrl: https://backstage-developer-hub-rhdh-gitlab.${basedomain}/api/auth/gitlab/handler/frame 
+        oidc:
+          development:
+            metadataUrl: https://instance-rhdh.apps.b9ez23r8.northeurope.aroapp.io/realms/rhdh/.well-known/openid-configuration # ${AUTH_OIDC_METADATA_URL}
+            clientId: rhdh # ${AUTH_OIDC_CLIENT_ID}
+            clientSecret: 4hvWWMLxUKOWOZrG2gyzUSpuBNKXqyRF # ${AUTH_OIDC_CLIENT_SECRET}
+            prompt: auto # ${AUTH_OIDC_PROMPT} # recommended to use auto
+            ## uncomment for additional configuration options
+            # callbackUrl: ${AUTH_OIDC_CALLBACK_URL}
+            # tokenEndpointAuthMethod: ${AUTH_OIDC_TOKEN_ENDPOINT_METHOD}
+            # tokenSignedResponseAlg: ${AUTH_OIDC_SIGNED_RESPONSE_ALG}
+            # scope: ${AUTH_OIDC_SCOPE}
+            ## Auth provider will try each resolver until it succeeds. Uncomment the resolvers you want to use to override the default resolver: `emailLocalPartMatchingUserEntityName`
+            # signIn:
+            #  resolvers:
+            #    - resolver: preferredUsernameMatchingUserEntityName
+            #    - resolver: emailMatchingUserEntityProfileEmail
+            #    - resolver: emailLocalPartMatchingUserEntityName
+
+#        keycloakOrg:
+#          default:
+#            baseUrl: https://instance-rhdh.apps.b9ez23r8.northeurope.aroapp.io
+#            loginRealm: rhdh # ${KEYCLOAK_REALM}
+#            realm: rhdh # ${KEYCLOAK_REALM}
+#            clientId: rhdh # ${KEYCLOAK_CLIENTID}
+#            clientSecret: 4hvWWMLxUKOWOZrG2gyzUSpuBNKXqyRF # ${KEYCLOAK_CLIENTSECRET} TODO get from keycloak config
