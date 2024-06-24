@@ -49,9 +49,9 @@ data:
             # tokenSignedResponseAlg: ${AUTH_OIDC_SIGNED_RESPONSE_ALG}
             # scope: ${AUTH_OIDC_SCOPE}
             ## Auth provider will try each resolver until it succeeds. Uncomment the resolvers you want to use to override the default resolver: `emailLocalPartMatchingUserEntityName`
-            # signIn:
-            #  resolvers:
-            #    - resolver: preferredUsernameMatchingUserEntityName
+            signIn:
+              resolvers:
+                - resolver: preferredUsernameMatchingUserEntityName
             #    - resolver: emailMatchingUserEntityProfileEmail
             #    - resolver: emailLocalPartMatchingUserEntityName
 
